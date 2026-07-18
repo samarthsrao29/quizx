@@ -1,0 +1,51 @@
+{
+  "quizzes": [
+    {
+      "id": "DS3R4R",
+      "title": "General Knowledge Quiz",
+      "duration": 10,
+      "questions": [
+        {
+          "id": "E1AFP5",
+          "text": "What is the capital of Japan?",
+          "options": [
+            "Beijing",
+            "Seoul",
+            "Tokyo",
+            "Bangkok"
+          ],
+          "correctAnswer": 2
+        },
+        {
+          "id": "WAOUPF",
+          "text": "Which element has the chemical symbol O?",
+          "options": [
+            "Gold",
+            "Oxygen",
+            "Osmium",
+            "Helium"
+          ],
+          "correctAnswer": 1
+        }
+      ],
+      "createdAt": "2026-07-18T05:03:06.140Z"
+    }
+  ],
+  "submissions": [
+    {
+      "id": "2Q64EC",
+      "quizId": "DS3R4R",
+      "studentName": "wef",
+      "studentEmail": "sam29rao@gmail.com",
+      "answers": {
+        "E1AFP5": 0,
+        "WAOUPF": 2
+      },
+      "score": 0,
+      "totalQuestions": 2,
+      "startedAt": "2026-07-18T05:08:08.288Z",
+      "submittedAt": "2026-07-18T05:08:14.991Z",
+      "completedInSeconds": 7
+    }
+  ]
+}
