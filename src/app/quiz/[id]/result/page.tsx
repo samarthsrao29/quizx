@@ -53,7 +53,7 @@ export default function QuizResult({ params }: { params: Promise<{ id: string }>
     // Clean up student session storage so they can't re-take immediately by navigating back
     return () => {
       sessionStorage.removeItem(`quiz_${id}_student_name`);
-      sessionStorage.removeItem(`quiz_${id}_student_email`);
+      sessionStorage.removeItem(`quiz_${id}_roll_number`);
       sessionStorage.removeItem(`quiz_${id}_started_at`);
       sessionStorage.removeItem(`quiz_${id}_session_id`);
       sessionStorage.removeItem(`quiz_${id}_score`);

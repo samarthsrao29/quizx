@@ -27,7 +27,7 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
 
   // Student info from session storage
   const [studentName, setStudentName] = useState('');
-  const [studentEmail, setStudentEmail] = useState('');
+  const [rollNumber, setRollNumber] = useState('');
   const [startedAt, setStartedAt] = useState('');
 
   // Quiz progress
@@ -77,7 +77,7 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
       const data = await res.json();
       if (data.success) {
         setStudentName(data.studentName);
-        setStudentEmail(data.studentEmail);
+        setRollNumber(data.rollNumber);
         setStartedAt(data.startedAt);
         setQuiz(data.quiz);
         setTimeLeft(data.timeLeft);
@@ -124,6 +124,7 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
       if (data.success) {
         // Save score and completion details to session storage
         sessionStorage.setItem(`quiz_${id}_student_name`, studentName); // Pass name to results page
+        sessionStorage.setItem(`quiz_${id}_roll_number`, rollNumber);
         sessionStorage.setItem(`quiz_${id}_score`, String(data.submission.score));
         sessionStorage.setItem(`quiz_${id}_total_questions`, String(data.submission.totalQuestions));
         sessionStorage.setItem(`quiz_${id}_percentage`, String(data.submission.percentage));
@@ -242,7 +243,7 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
         <div>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{quiz.title}</h2>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Student: <strong>{studentName}</strong> ({studentEmail})
+            Student: <strong>{studentName}</strong> (Roll: {rollNumber})
           </span>
         </div>
 

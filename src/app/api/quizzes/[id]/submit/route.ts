@@ -58,7 +58,7 @@ export async function POST(
       id: sessionId, // Use session ID as submission ID to prevent duplication
       quizId: id,
       studentName: session.studentName,
-      studentEmail: session.studentEmail,
+      rollNumber: session.rollNumber,
       answers: answers as Record<string, number>,
       score,
       totalQuestions: quiz.questions.length,

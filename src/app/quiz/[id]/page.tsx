@@ -21,7 +21,7 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
   const [error, setError] = useState('');
 
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [rollNumber, setRollNumber] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -55,15 +55,8 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
 
   const handleStartQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      setFormError('Please fill in both name and email.');
-      return;
-    }
-    
-    // Simple email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setFormError('Please enter a valid email address.');
+    if (!name.trim() || !rollNumber.trim()) {
+      setFormError('Please fill in both name and roll number.');
       return;
     }
 
@@ -76,7 +69,7 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentName: name.trim(),
-          studentEmail: email.trim(),
+          rollNumber: rollNumber.trim(),
         }),
       });
 
@@ -219,13 +212,13 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
                   />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Email Address</label>
+                  <label className="form-label">Roll Number / Student ID</label>
                   <input
-                    type="email"
-                    placeholder="e.g. john@example.com"
+                    type="text"
+                    placeholder="e.g. CS1024 or 22BCE100"
                     className="input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={rollNumber}
+                    onChange={(e) => setRollNumber(e.target.value)}
                     required
                     disabled={submitting}
                   />

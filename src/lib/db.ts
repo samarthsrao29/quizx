@@ -23,7 +23,7 @@ export interface Submission {
   id: string;
   quizId: string;
   studentName: string;
-  studentEmail: string;
+  rollNumber: string;
   answers: Record<string, number>; // questionId -> selectedOptionIndex
   score: number;
   totalQuestions: number;
@@ -36,7 +36,7 @@ export interface StudentSession {
   id: string;
   quizId: string;
   studentName: string;
-  studentEmail: string;
+  rollNumber: string;
   startedAt: string;
 }
 
@@ -263,5 +263,25 @@ export async function deleteSession(id: string): Promise<boolean> {
       return true;
     }
     return false;
+  }
+}
+
+export async function hasStudentSubmitted(quizId: string, rollNumber: string): Promise<boolean> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('id')
+      .eq('quizId', quizId)
+      .eq('rollNumber', rollNumber.trim());
+    if (error) {
+      console.error('Error checking duplicate submission in Supabase:', error);
+      return false;
+    }
+    return !!(data && data.length > 0);
+  } else {
+    const db = readLocalDb();
+    return db.submissions.some(
+      (s) => s.quizId === quizId && s.rollNumber.trim().toLowerCase() === rollNumber.trim().toLowerCase()
+    );
   }
 }

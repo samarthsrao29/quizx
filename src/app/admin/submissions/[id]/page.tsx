@@ -6,7 +6,7 @@ import Link from 'next/link';
 interface Submission {
   id: string;
   studentName: string;
-  studentEmail: string;
+  rollNumber: string;
   score: number;
   totalQuestions: number;
   submittedAt: string;
@@ -52,7 +52,7 @@ export default function QuizSubmissions({ params }: { params: Promise<{ id: stri
 
     const headers = [
       'Student Name',
-      'Student Email',
+      'Roll Number',
       'Score Obtained',
       'Total Questions',
       'Percentage (%)',
@@ -63,7 +63,7 @@ export default function QuizSubmissions({ params }: { params: Promise<{ id: stri
 
     const rows = submissions.map((sub) => [
       sub.studentName,
-      sub.studentEmail,
+      sub.rollNumber,
       sub.score,
       sub.totalQuestions,
       Math.round((sub.score / sub.totalQuestions) * 100),
@@ -298,7 +298,7 @@ export default function QuizSubmissions({ params }: { params: Promise<{ id: stri
                   <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)' }}>
                     <th style={{ padding: '1rem 0.5rem' }}>Rank</th>
                     <th style={{ padding: '1rem 0.5rem' }}>Name</th>
-                    <th style={{ padding: '1rem 0.5rem' }}>Email</th>
+                    <th style={{ padding: '1rem 0.5rem' }}>Roll Number</th>
                     <th style={{ padding: '1rem 0.5rem' }}>Score</th>
                     <th style={{ padding: '1rem 0.5rem' }}>Percentage</th>
                     <th style={{ padding: '1rem 0.5rem' }}>Time Taken</th>
@@ -316,7 +316,7 @@ export default function QuizSubmissions({ params }: { params: Promise<{ id: stri
                       <tr key={sub.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }}>
                         <td style={{ padding: '1rem 0.5rem', fontWeight: 'bold' }}>#{index + 1}</td>
                         <td style={{ padding: '1rem 0.5rem', fontWeight: 600 }}>{sub.studentName}</td>
-                        <td style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)' }}>{sub.studentEmail}</td>
+                        <td style={{ padding: '1rem 0.5rem', color: 'var(--text-secondary)' }}>{sub.rollNumber}</td>
                         <td style={{ padding: '1rem 0.5rem', fontWeight: 'bold' }}>{sub.score} / {sub.totalQuestions}</td>
                         <td style={{ padding: '1rem 0.5rem' }}>
                           <span className={`badge ${badgeClass}`}>{percentage}%</span>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getQuiz, createSession, getSession, StudentSession } from '@/lib/db';
+import { getQuiz, createSession, getSession, StudentSession, hasStudentSubmitted } from '@/lib/db';
 
 function generateSessionId(): string {
   return 'SESS_' + Math.random().toString(36).substring(2, 11).toUpperCase();
@@ -35,14 +35,23 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { studentName, studentEmail } = body;
+    const { studentName, rollNumber } = body;
 
     if (!studentName || typeof studentName !== 'string' || !studentName.trim()) {
       return NextResponse.json({ success: false, error: 'Name is required' }, { status: 400 });
     }
 
-    if (!studentEmail || typeof studentEmail !== 'string' || !studentEmail.trim()) {
-      return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
+    if (!rollNumber || typeof rollNumber !== 'string' || !rollNumber.trim()) {
+      return NextResponse.json({ success: false, error: 'Roll number is required' }, { status: 400 });
+    }
+
+    // Check for duplicate submission (anti-retake check)
+    const hasSubmitted = await hasStudentSubmitted(id, rollNumber);
+    if (hasSubmitted) {
+      return NextResponse.json({
+        success: false,
+        error: `Roll Number "${rollNumber}" has already submitted this quiz. Retaking is not allowed.`
+      }, { status: 400 });
     }
 
     const sessionId = generateSessionId();
@@ -52,7 +61,7 @@ export async function POST(
       id: sessionId,
       quizId: id,
       studentName: studentName.trim(),
-      studentEmail: studentEmail.trim(),
+      rollNumber: rollNumber.trim(),
       startedAt
     };
 
@@ -125,7 +134,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       studentName: session.studentName,
-      studentEmail: session.studentEmail,
+      rollNumber: session.rollNumber,
       startedAt: session.startedAt,
       timeLeft,
       quiz: {
