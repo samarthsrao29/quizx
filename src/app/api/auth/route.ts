@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate the credentials against database
-    const admin = await getAdminUser(username.trim());
+    const admin = await getAdminUser(username.trim().toLowerCase());
     if (admin && admin.passwordHash === password) {
       const secureToken = generateToken(admin.username);
       
