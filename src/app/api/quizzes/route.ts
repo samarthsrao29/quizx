@@ -6,9 +6,10 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const quizzes = await getQuizzes();
+    const adminId = req.headers.get('x-admin-id');
+    const quizzes = await getQuizzes(adminId || undefined);
     // Return quizzes sorted by creation date descending
     const sorted = [...quizzes].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
       };
     });
 
+    const adminId = req.headers.get('x-admin-id') || undefined;
     const newQuiz: Quiz = {
       id: generateId(),
       title: title.trim(),
@@ -64,7 +66,8 @@ export async function POST(req: NextRequest) {
       questions: validatedQuestions,
       createdAt: new Date().toISOString(),
       startDate: startDate || undefined,
-      endDate: endDate || undefined
+      endDate: endDate || undefined,
+      creatorId: adminId
     };
 
     await saveQuiz(newQuiz);

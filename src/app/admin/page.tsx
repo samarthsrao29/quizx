@@ -21,6 +21,12 @@ export default function AdminDashboard() {
   const [qrQuizTitle, setQrQuizTitle] = useState<string>('');
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [currentAdmin, setCurrentAdmin] = useState('');
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [changePasswordError, setChangePasswordError] = useState('');
+  const [changePasswordSuccess, setChangePasswordSuccess] = useState('');
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -39,8 +45,57 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    fetchCurrentAdmin();
     fetchQuizzes();
   }, []);
+
+  const fetchCurrentAdmin = async () => {
+    try {
+      const res = await fetch('/api/auth');
+      const data = await res.json();
+      if (data.success) {
+        setCurrentAdmin(data.username);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword.trim()) {
+      setChangePasswordError('Password cannot be empty');
+      return;
+    }
+
+    setChangePasswordLoading(true);
+    setChangePasswordError('');
+    setChangePasswordSuccess('');
+
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: newPassword.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setChangePasswordSuccess('Password updated successfully!');
+        setNewPassword('');
+        setTimeout(() => {
+          setShowChangePassword(false);
+          setChangePasswordSuccess('');
+        }, 1500);
+      } else {
+        setChangePasswordError(data.error || 'Failed to update password.');
+      }
+    } catch (err) {
+      console.error(err);
+      setChangePasswordError('An error occurred. Please try again.');
+    } finally {
+      setChangePasswordLoading(false);
+    }
+  };
 
   const fetchQuizzes = async () => {
     try {
@@ -90,13 +145,20 @@ export default function AdminDashboard() {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex-between mb-4">
+      <div className="flex-between mb-4" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>Admin Dashboard</h1>
-          <p>Manage your active assessments and view student performance.</p>
+          <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem', textTransform: 'capitalize' }}>
+            {currentAdmin ? `${currentAdmin} Quiz Admin` : 'Admin Dashboard'}
+          </h1>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            Manage {currentAdmin || 'your'} active assessments and view student performance.
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={handleLogout} className="btn btn-outline">
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <button onClick={() => setShowChangePassword(true)} className="btn btn-outline">
+            Change Password
+          </button>
+          <button onClick={handleLogout} className="btn btn-outline" style={{ border: '1px solid var(--danger)', color: 'var(--danger)' }}>
             Logout
           </button>
           <Link href="/admin/create" className="btn btn-primary">
@@ -338,6 +400,113 @@ export default function AdminDashboard() {
             >
               Dismiss
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePassword && (
+        <div className="flex-center animate-fade-in" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(9, 6, 22, 0.85)',
+          zIndex: 1000,
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div className="card" style={{
+            width: '90%',
+            maxWidth: '400px',
+            padding: '2.5rem',
+            position: 'relative',
+            border: '1px solid var(--border-focus)',
+            boxShadow: '0 0 40px rgba(139, 92, 246, 0.25)'
+          }}>
+            <button
+              onClick={() => {
+                setShowChangePassword(false);
+                setChangePasswordError('');
+                setChangePasswordSuccess('');
+                setNewPassword('');
+              }}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1.25rem',
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontSize: '2rem',
+                cursor: 'pointer',
+                padding: '0.25rem',
+                lineHeight: 1
+              }}
+              title="Close"
+            >
+              &times;
+            </button>
+            <h2 className="mb-2" style={{ fontSize: '1.5rem', textAlign: 'center' }}>Change Password</h2>
+            <p className="mb-4" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+              Update credentials for <strong>{currentAdmin}</strong> admin account.
+            </p>
+
+            {changePasswordError && (
+              <div className="badge-danger mb-3" style={{ padding: '0.75rem 1rem', borderRadius: 'var(--border-radius-sm)', fontSize: '0.9rem', display: 'block', textAlign: 'center', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171' }}>
+                {changePasswordError}
+              </div>
+            )}
+
+            {changePasswordSuccess && (
+              <div className="badge-success mb-3" style={{ padding: '0.75rem 1rem', borderRadius: 'var(--border-radius-sm)', fontSize: '0.9rem', display: 'block', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399' }}>
+                {changePasswordSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">New Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter new password"
+                  className="input"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  disabled={changePasswordLoading}
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChangePassword(false);
+                    setChangePasswordError('');
+                    setChangePasswordSuccess('');
+                    setNewPassword('');
+                  }}
+                  className="btn btn-outline"
+                  style={{ flex: 1 }}
+                  disabled={changePasswordLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                  disabled={changePasswordLoading}
+                >
+                  {changePasswordLoading ? 'Saving...' : 'Update'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

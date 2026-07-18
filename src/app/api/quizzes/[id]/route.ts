@@ -37,6 +37,12 @@ export async function GET(
       });
     }
 
+    // Security check: Only allow the creator admin to fetch full quiz details
+    const adminId = req.headers.get('x-admin-id');
+    if (quiz.creatorId && quiz.creatorId !== adminId) {
+      return NextResponse.json({ success: false, error: 'Forbidden: You do not own this quiz.' }, { status: 403 });
+    }
+
     // Otherwise return full quiz details (for editing or preview)
     return NextResponse.json({ success: true, quiz });
   } catch (error: any) {
@@ -50,6 +56,17 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const quiz = await getQuiz(id);
+    if (!quiz) {
+      return NextResponse.json({ success: false, error: 'Quiz not found' }, { status: 404 });
+    }
+
+    // Security check: Only allow the creator admin to delete
+    const adminId = req.headers.get('x-admin-id');
+    if (quiz.creatorId && quiz.creatorId !== adminId) {
+      return NextResponse.json({ success: false, error: 'Forbidden: You do not own this quiz.' }, { status: 403 });
+    }
+
     const deleted = await deleteQuiz(id);
 
     if (!deleted) {

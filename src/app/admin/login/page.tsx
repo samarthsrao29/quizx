@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AdminLogin() {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,8 +12,8 @@ export default function AdminLogin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password.trim()) {
-      setError('Password is required');
+    if (!username.trim() || !password.trim()) {
+      setError('Both username and password are required');
       return;
     }
 
@@ -23,7 +24,7 @@ export default function AdminLogin() {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       });
 
       const data = await res.json();
@@ -48,7 +49,7 @@ export default function AdminLogin() {
           <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🔒</div>
           <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Admin Access</h1>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Enter the password to access the Quiz Dashboard.
+            Enter username and password to unlock your subject dashboard.
           </p>
         </div>
 
@@ -58,7 +59,24 @@ export default function AdminLogin() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Username</label>
+            <input
+              type="text"
+              placeholder="e.g. physics or math"
+              className="input"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setError('');
+              }}
+              required
+              disabled={loading}
+              autoFocus
+            />
+          </div>
+
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Password</label>
             <input
@@ -72,7 +90,6 @@ export default function AdminLogin() {
               }}
               required
               disabled={loading}
-              autoFocus
             />
           </div>
 

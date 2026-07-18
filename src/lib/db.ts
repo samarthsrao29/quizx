@@ -17,6 +17,7 @@ export interface Quiz {
   createdAt: string;
   startDate?: string;
   endDate?: string;
+  creatorId?: string; // Links quiz to its admin creator ("physics" or "math")
 }
 
 export interface Submission {
@@ -40,10 +41,16 @@ export interface StudentSession {
   startedAt: string;
 }
 
+export interface AdminUser {
+  username: string;
+  passwordHash: string;
+}
+
 interface DatabaseSchema {
   quizzes: Quiz[];
   submissions: Submission[];
   sessions: StudentSession[];
+  admins: AdminUser[];
 }
 
 const DB_DIR = path.join(process.cwd(), 'data');
@@ -64,7 +71,7 @@ function initializeLocalDb() {
     fs.mkdirSync(DB_DIR, { recursive: true });
   }
   if (!fs.existsSync(DB_PATH)) {
-    const initialData: DatabaseSchema = { quizzes: [], submissions: [], sessions: [] };
+    const initialData: DatabaseSchema = { quizzes: [], submissions: [], sessions: [], admins: [] };
     fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2), 'utf-8');
   }
 }
@@ -74,14 +81,17 @@ function readLocalDb(): DatabaseSchema {
   try {
     const fileContent = fs.readFileSync(DB_PATH, 'utf-8');
     const parsed = JSON.parse(fileContent);
-    // Ensure sessions array is present for older local db files
+    // Ensure sessions and admins arrays are present for older local db files
     if (!parsed.sessions) {
       parsed.sessions = [];
+    }
+    if (!parsed.admins) {
+      parsed.admins = [];
     }
     return parsed as DatabaseSchema;
   } catch (error) {
     console.error('Error reading database file:', error);
-    return { quizzes: [], submissions: [], sessions: [] };
+    return { quizzes: [], submissions: [], sessions: [], admins: [] };
   }
 }
 
@@ -96,11 +106,13 @@ function writeLocalDb(data: DatabaseSchema): void {
 
 // Unified Database Helpers (Asynchronous)
 
-export async function getQuizzes(): Promise<Quiz[]> {
+export async function getQuizzes(creatorId?: string): Promise<Quiz[]> {
   if (supabase) {
-    const { data, error } = await supabase
-      .from('quizzes')
-      .select('*');
+    let query = supabase.from('quizzes').select('*');
+    if (creatorId) {
+      query = query.eq('creatorId', creatorId);
+    }
+    const { data, error } = await query;
     if (error) {
       console.error('Error fetching quizzes from Supabase:', error);
       return [];
@@ -108,6 +120,9 @@ export async function getQuizzes(): Promise<Quiz[]> {
     return data || [];
   } else {
     const db = readLocalDb();
+    if (creatorId) {
+      return db.quizzes.filter((q) => q.creatorId === creatorId);
+    }
     return db.quizzes;
   }
 }
@@ -283,5 +298,91 @@ export async function hasStudentSubmitted(quizId: string, rollNumber: string): P
     return db.submissions.some(
       (s) => s.quizId === quizId && s.rollNumber.trim().toLowerCase() === rollNumber.trim().toLowerCase()
     );
+  }
+}
+
+export async function getAdminUser(username: string): Promise<AdminUser | undefined> {
+  await initializeDefaultAdmins();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle();
+    if (error) {
+      console.error(`Error fetching admin ${username} from Supabase:`, error);
+      return undefined;
+    }
+    return data || undefined;
+  } else {
+    const db = readLocalDb();
+    return db.admins?.find((a) => a.username.toLowerCase() === username.toLowerCase());
+  }
+}
+
+export async function updateAdminPassword(username: string, newPasswordHash: string): Promise<boolean> {
+  if (supabase) {
+    const { error } = await supabase
+      .from('admins')
+      .update({ passwordHash: newPasswordHash })
+      .eq('username', username);
+    if (error) {
+      console.error(`Error updating admin password in Supabase:`, error);
+      return false;
+    }
+    return true;
+  } else {
+    const db = readLocalDb();
+    if (!db.admins) db.admins = [];
+    const admin = db.admins.find((a) => a.username.toLowerCase() === username.toLowerCase());
+    if (admin) {
+      admin.passwordHash = newPasswordHash;
+      writeLocalDb(db);
+      return true;
+    }
+    return false;
+  }
+}
+
+let adminsInitialized = false;
+
+export async function initializeDefaultAdmins(): Promise<void> {
+  if (adminsInitialized) return;
+  adminsInitialized = true;
+
+  if (supabase) {
+    const defaultAdmins = [
+      { username: 'physics', passwordHash: 'SAM29@' },
+      { username: 'math', passwordHash: 'SAM30@' }
+    ];
+    for (const admin of defaultAdmins) {
+      const { data } = await supabase
+        .from('admins')
+        .select('username')
+        .eq('username', admin.username)
+        .maybeSingle();
+      if (!data) {
+        const { error } = await supabase
+          .from('admins')
+          .insert([admin]);
+        if (error) {
+          console.error(`Error seeding admin ${admin.username}:`, error);
+        }
+      }
+    }
+  } else {
+    const db = readLocalDb();
+    if (!db.admins) {
+      db.admins = [];
+    }
+    const hasPhysics = db.admins.some((a) => a.username === 'physics');
+    if (!hasPhysics) {
+      db.admins.push({ username: 'physics', passwordHash: 'SAM29@' });
+    }
+    const hasMath = db.admins.some((a) => a.username === 'math');
+    if (!hasMath) {
+      db.admins.push({ username: 'math', passwordHash: 'SAM30@' });
+    }
+    writeLocalDb(db);
   }
 }

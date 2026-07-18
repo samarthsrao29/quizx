@@ -13,6 +13,12 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Quiz not found' }, { status: 404 });
     }
 
+    // Security check: Only allow the creator admin to fetch submissions
+    const adminId = req.headers.get('x-admin-id');
+    if (quiz.creatorId && quiz.creatorId !== adminId) {
+      return NextResponse.json({ success: false, error: 'Forbidden: You do not own this quiz.' }, { status: 403 });
+    }
+
     const submissions = await getSubmissions(id);
     
     // Sort submissions by score descending, then by completion time

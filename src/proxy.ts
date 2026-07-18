@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { verifyToken, decodeToken } from '@/lib/auth';
 
 export function proxy(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
+  const session = req.cookies.get('admin_session');
+  
+  let adminId: string | null = null;
+  if (session && verifyToken(session.value)) {
+    const decoded = decodeToken(session.value);
+    if (decoded && decoded.adminId) {
+      adminId = decoded.adminId;
+    }
+  }
 
   // 1. Protect Admin pages
   if (pathname.startsWith('/admin')) {
@@ -12,8 +21,7 @@ export function proxy(req: NextRequest) {
       return NextResponse.next();
     }
 
-    const session = req.cookies.get('admin_session');
-    if (!session || !verifyToken(session.value)) {
+    if (!adminId) {
       const loginUrl = new URL('/admin/login', req.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -43,15 +51,23 @@ export function proxy(req: NextRequest) {
       isProtected = true;
     }
 
-    if (isProtected) {
-      const session = req.cookies.get('admin_session');
-      if (!session || !verifyToken(session.value)) {
-        return new NextResponse(
-          JSON.stringify({ success: false, error: 'Unauthorized' }),
-          { status: 401, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
+    if (isProtected && !adminId) {
+      return new NextResponse(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
     }
+  }
+
+  // Propagate the x-admin-id header downstream if authenticated
+  if (adminId) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-admin-id', adminId);
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   return NextResponse.next();
