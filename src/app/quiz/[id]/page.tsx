@@ -144,6 +144,39 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
           </div>
         </div>
 
+        {/* Availability Schedule */}
+        {(quiz?.startDate || quiz?.endDate) && (
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.01)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--border-radius-md)',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            fontSize: '0.85rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem'
+          }}>
+            <span style={{ fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>
+              🗓️ Availability Schedule
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {quiz.startDate && (
+                <div className="flex-between">
+                  <span style={{ color: 'var(--text-muted)' }}>Opens:</span>
+                  <span style={{ fontWeight: 600 }}>{new Date(quiz.startDate).toLocaleString()}</span>
+                </div>
+              )}
+              {quiz.endDate && (
+                <div className="flex-between">
+                  <span style={{ color: 'var(--text-muted)' }}>Closes:</span>
+                  <span style={{ fontWeight: 600, color: 'var(--danger)' }}>{new Date(quiz.endDate).toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Date Availability Validation */}
         {(() => {
           const now = new Date();
