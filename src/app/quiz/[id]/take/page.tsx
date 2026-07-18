@@ -30,6 +30,10 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
   const [rollNumber, setRollNumber] = useState('');
   const [startedAt, setStartedAt] = useState('');
 
+  // Custom modal states
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
   // Quiz progress
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -105,7 +109,7 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
 
     const sessionId = sessionStorage.getItem(`quiz_${id}_session_id`);
     if (!sessionId) {
-      alert('Error: Session expired.');
+      setAlertMessage('Error: Session expired.');
       router.replace(`/quiz/${id}`);
       return;
     }
@@ -133,33 +137,23 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
         // Redirect to results page
         router.push(`/quiz/${id}/result`);
       } else {
-        alert('Failed to submit quiz: ' + data.error);
+        setAlertMessage(data.error || 'Failed to submit quiz.');
         setSubmitting(false);
       }
     } catch (err) {
       console.error(err);
-      alert('An error occurred during submission.');
+      setAlertMessage('An error occurred during submission.');
       setSubmitting(false);
     }
   };
 
   const handleAutoSubmit = () => {
-    // When time expires, submit immediately with whatever answers exist.
-    // Use window.alert to notify student, then trigger submit
-    alert('Time has expired! Your quiz will be submitted automatically.');
+    // When time expires, submit immediately with whatever answers exist without blocking popups
     submitQuiz();
   };
 
   const handleSubmitClick = () => {
-    const unansweredCount = (quiz?.questions.length || 0) - Object.keys(answers).length;
-    let message = 'Are you sure you want to submit your quiz?';
-    if (unansweredCount > 0) {
-      message = `You have ${unansweredCount} unanswered question(s). ${message}`;
-    }
-
-    if (confirm(message)) {
-      submitQuiz();
-    }
+    setShowSubmitConfirm(true);
   };
 
   const formatTime = (seconds: number) => {
@@ -366,6 +360,110 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
           </button>
         )}
       </div>
+
+      {/* Submit Confirmation Custom Dialog */}
+      {showSubmitConfirm && (
+        <div className="flex-center animate-fade-in" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(9, 6, 22, 0.85)',
+          zIndex: 1000,
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div className="card text-center" style={{
+            width: '90%',
+            maxWidth: '400px',
+            padding: '2.5rem',
+            border: '1px solid var(--border-focus)',
+            boxShadow: '0 0 40px rgba(139, 92, 246, 0.25)'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📝</div>
+            <h2 className="mb-2" style={{ fontSize: '1.5rem' }}>Submit Quiz?</h2>
+            {(() => {
+              const unansweredCount = (quiz?.questions.length || 0) - Object.keys(answers).length;
+              return (
+                <div className="mb-4" style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+                  {unansweredCount > 0 ? (
+                    <div className="text-danger mb-2" style={{ fontWeight: 'bold' }}>
+                      ⚠️ You have left {unansweredCount} question(s) unanswered!
+                    </div>
+                  ) : null}
+                  <p>Are you sure you want to finish and submit your quiz answers? You cannot change your answers after submission.</p>
+                </div>
+              );
+            })()}
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowSubmitConfirm(false)}
+                className="btn btn-outline"
+                style={{ flex: 1 }}
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => {
+                  setShowSubmitConfirm(false);
+                  submitQuiz();
+                }}
+                className="btn btn-success"
+                style={{ flex: 1 }}
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Notification Custom Dialog */}
+      {alertMessage && (
+        <div className="flex-center animate-fade-in" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(9, 6, 22, 0.85)',
+          zIndex: 1000,
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div className="card text-center" style={{
+            width: '90%',
+            maxWidth: '380px',
+            padding: '2rem',
+            border: '1px solid var(--border-focus)',
+            boxShadow: '0 0 30px rgba(139, 92, 246, 0.2)'
+          }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>ℹ️</div>
+            <h2 className="mb-2" style={{ fontSize: '1.25rem' }}>Notification</h2>
+            <p className="mb-4" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              {alertMessage}
+            </p>
+            <button
+              onClick={() => {
+                setAlertMessage(null);
+                // Redirect if session expired
+                if (alertMessage.includes('Session expired')) {
+                  router.replace(`/quiz/${id}`);
+                }
+              }}
+              className="btn btn-primary"
+              style={{ width: '100%' }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

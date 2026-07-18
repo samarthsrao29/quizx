@@ -19,6 +19,8 @@ export default function AdminDashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [qrQuizTitle, setQrQuizTitle] = useState<string>('');
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -69,11 +71,7 @@ export default function AdminDashboard() {
     setQrQuizTitle(quizTitle);
   };
 
-  const handleDeleteQuiz = async (quizId: string) => {
-    if (!confirm('Are you sure you want to delete this quiz? All student submissions will also be deleted.')) {
-      return;
-    }
-
+  const executeDeleteQuiz = async (quizId: string) => {
     try {
       const res = await fetch(`/api/quizzes/${quizId}`, {
         method: 'DELETE',
@@ -82,11 +80,11 @@ export default function AdminDashboard() {
       if (data.success) {
         setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
       } else {
-        alert('Failed to delete quiz: ' + data.error);
+        setAlertMessage(data.error || 'Failed to delete quiz.');
       }
     } catch (error) {
       console.error('Error deleting quiz:', error);
-      alert('An error occurred while deleting the quiz.');
+      setAlertMessage('An error occurred while deleting the quiz.');
     }
   };
 
@@ -174,7 +172,7 @@ export default function AdminDashboard() {
                   View Submissions
                 </Link>
                 <button
-                  onClick={() => handleDeleteQuiz(quiz.id)}
+                  onClick={() => setDeleteTargetId(quiz.id)}
                   className="btn btn-danger btn-sm"
                   style={{ padding: '0.5rem 0.75rem' }}
                   title="Delete Quiz"
@@ -251,6 +249,95 @@ export default function AdminDashboard() {
             <div style={{ wordBreak: 'break-all', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Link: <a href={qrCodeUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--secondary)', textDecoration: 'underline' }}>{qrCodeUrl}</a>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Quiz Confirmation Modal */}
+      {deleteTargetId && (
+        <div className="flex-center animate-fade-in" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(9, 6, 22, 0.85)',
+          zIndex: 1000,
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div className="card text-center" style={{
+            width: '90%',
+            maxWidth: '400px',
+            padding: '2.5rem',
+            border: '1px solid var(--danger)',
+            boxShadow: '0 0 40px rgba(239, 68, 68, 0.25)'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+            <h2 className="mb-2" style={{ fontSize: '1.5rem', color: 'var(--danger)' }}>Delete Quiz?</h2>
+            <p className="mb-4" style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+              Are you sure you want to delete this quiz? This will permanently delete the quiz and all student submissions. This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button
+                onClick={() => setDeleteTargetId(null)}
+                className="btn btn-outline"
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const idToDelete = deleteTargetId;
+                  setDeleteTargetId(null);
+                  executeDeleteQuiz(idToDelete);
+                }}
+                className="btn btn-danger"
+                style={{ flex: 1 }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Alert Notification Modal */}
+      {alertMessage && (
+        <div className="flex-center animate-fade-in" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(9, 6, 22, 0.85)',
+          zIndex: 1000,
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div className="card text-center" style={{
+            width: '90%',
+            maxWidth: '380px',
+            padding: '2rem',
+            border: '1px solid var(--border-focus)',
+            boxShadow: '0 0 30px rgba(139, 92, 246, 0.2)'
+          }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>ℹ️</div>
+            <h2 className="mb-2" style={{ fontSize: '1.25rem' }}>Notification</h2>
+            <p className="mb-4" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              {alertMessage}
+            </p>
+            <button
+              onClick={() => setAlertMessage(null)}
+              className="btn btn-primary"
+              style={{ width: '100%' }}
+            >
+              Dismiss
+            </button>
           </div>
         </div>
       )}
