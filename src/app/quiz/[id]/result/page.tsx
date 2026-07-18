@@ -37,6 +37,7 @@ export default function QuizResult({ params }: { params: Promise<{ id: string }>
       sessionStorage.removeItem(`quiz_${id}_student_name`);
       sessionStorage.removeItem(`quiz_${id}_student_email`);
       sessionStorage.removeItem(`quiz_${id}_started_at`);
+      sessionStorage.removeItem(`quiz_${id}_session_id`);
       sessionStorage.removeItem(`quiz_${id}_score`);
       sessionStorage.removeItem(`quiz_${id}_total_questions`);
       sessionStorage.removeItem(`quiz_${id}_percentage`);

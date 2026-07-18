@@ -21,6 +21,7 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [formError, setFormError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchQuizInfo();
@@ -48,7 +49,7 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
     }
   };
 
-  const handleStartQuiz = (e: React.FormEvent) => {
+  const handleStartQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim()) {
       setFormError('Please fill in both name and email.');
@@ -63,14 +64,32 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
     }
 
     setFormError('');
+    setSubmitting(true);
 
-    // Save student lobby data to sessionStorage
-    sessionStorage.setItem(`quiz_${id}_student_name`, name.trim());
-    sessionStorage.setItem(`quiz_${id}_student_email`, email.trim());
-    sessionStorage.setItem(`quiz_${id}_started_at`, new Date().toISOString());
+    try {
+      const res = await fetch(`/api/quizzes/${id}/session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentName: name.trim(),
+          studentEmail: email.trim(),
+        }),
+      });
 
-    // Redirect to active quiz page
-    router.push(`/quiz/${id}/take`);
+      const data = await res.json();
+      if (data.success) {
+        // Save the secure session ID in sessionStorage
+        sessionStorage.setItem(`quiz_${id}_session_id`, data.sessionId);
+        router.push(`/quiz/${id}/take`);
+      } else {
+        setFormError(data.error || 'Failed to start quiz session.');
+      }
+    } catch (err) {
+      console.error(err);
+      setFormError('An error occurred. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -154,6 +173,7 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              disabled={submitting}
             />
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
@@ -165,13 +185,14 @@ export default function StudentLobby({ params }: { params: Promise<{ id: string 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={submitting}
             />
           </div>
 
           {formError && <span className="text-danger" style={{ fontSize: '0.85rem' }}>{formError}</span>}
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
-            Start Quiz
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} disabled={submitting}>
+            {submitting ? 'Initializing...' : 'Start Quiz'}
           </button>
         </form>
       </div>

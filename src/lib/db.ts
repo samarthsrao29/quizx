@@ -30,9 +30,18 @@ export interface Submission {
   completedInSeconds: number;
 }
 
+export interface StudentSession {
+  id: string;
+  quizId: string;
+  studentName: string;
+  studentEmail: string;
+  startedAt: string;
+}
+
 interface DatabaseSchema {
   quizzes: Quiz[];
   submissions: Submission[];
+  sessions: StudentSession[];
 }
 
 const DB_DIR = path.join(process.cwd(), 'data');
@@ -53,7 +62,7 @@ function initializeLocalDb() {
     fs.mkdirSync(DB_DIR, { recursive: true });
   }
   if (!fs.existsSync(DB_PATH)) {
-    const initialData: DatabaseSchema = { quizzes: [], submissions: [] };
+    const initialData: DatabaseSchema = { quizzes: [], submissions: [], sessions: [] };
     fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2), 'utf-8');
   }
 }
@@ -62,10 +71,15 @@ function readLocalDb(): DatabaseSchema {
   initializeLocalDb();
   try {
     const fileContent = fs.readFileSync(DB_PATH, 'utf-8');
-    return JSON.parse(fileContent) as DatabaseSchema;
+    const parsed = JSON.parse(fileContent);
+    // Ensure sessions array is present for older local db files
+    if (!parsed.sessions) {
+      parsed.sessions = [];
+    }
+    return parsed as DatabaseSchema;
   } catch (error) {
     console.error('Error reading database file:', error);
-    return { quizzes: [], submissions: [] };
+    return { quizzes: [], submissions: [], sessions: [] };
   }
 }
 
@@ -132,8 +146,9 @@ export async function saveQuiz(quiz: Quiz): Promise<void> {
 
 export async function deleteQuiz(id: string): Promise<boolean> {
   if (supabase) {
-    // Submissions table has foreign key delete cascade, so deleting the quiz will delete responses
-    const { error, count } = await supabase
+    // Submissions and Sessions tables have foreign key delete cascade,
+    // so deleting the quiz will delete responses and active attempts
+    const { error } = await supabase
       .from('quizzes')
       .delete()
       .eq('id', id);
@@ -147,8 +162,9 @@ export async function deleteQuiz(id: string): Promise<boolean> {
     const index = db.quizzes.findIndex((q) => q.id === id);
     if (index !== -1) {
       db.quizzes.splice(index, 1);
-      // Clean up local submissions
+      // Clean up local submissions and sessions
       db.submissions = db.submissions.filter((s) => s.quizId !== id);
+      db.sessions = db.sessions.filter((s) => s.quizId !== id);
       writeLocalDb(db);
       return true;
     }
@@ -186,5 +202,64 @@ export async function saveSubmission(submission: Submission): Promise<void> {
     const db = readLocalDb();
     db.submissions.push(submission);
     writeLocalDb(db);
+  }
+}
+
+// Student Attempts/Sessions Helpers (Anti-Cheat)
+
+export async function createSession(session: StudentSession): Promise<void> {
+  if (supabase) {
+    const { error } = await supabase
+      .from('sessions')
+      .insert([session]);
+    if (error) {
+      console.error('Error creating session in Supabase:', error);
+      throw new Error(error.message);
+    }
+  } else {
+    const db = readLocalDb();
+    db.sessions.push(session);
+    writeLocalDb(db);
+  }
+}
+
+export async function getSession(id: string): Promise<StudentSession | undefined> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) {
+      console.error(`Error fetching session ${id} from Supabase:`, error);
+      return undefined;
+    }
+    return data || undefined;
+  } else {
+    const db = readLocalDb();
+    return db.sessions.find((s) => s.id === id);
+  }
+}
+
+export async function deleteSession(id: string): Promise<boolean> {
+  if (supabase) {
+    const { error } = await supabase
+      .from('sessions')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      console.error(`Error deleting session ${id} from Supabase:`, error);
+      return false;
+    }
+    return true;
+  } else {
+    const db = readLocalDb();
+    const index = db.sessions.findIndex((s) => s.id === id);
+    if (index !== -1) {
+      db.sessions.splice(index, 1);
+      writeLocalDb(db);
+      return true;
+    }
+    return false;
   }
 }

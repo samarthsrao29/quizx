@@ -37,20 +37,14 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
 
   // Load student info and quiz questions
   useEffect(() => {
-    const name = sessionStorage.getItem(`quiz_${id}_student_name`);
-    const email = sessionStorage.getItem(`quiz_${id}_student_email`);
-    const start = sessionStorage.getItem(`quiz_${id}_started_at`);
+    const sessionId = sessionStorage.getItem(`quiz_${id}_session_id`);
 
-    if (!name || !email || !start) {
+    if (!sessionId) {
       router.replace(`/quiz/${id}`);
       return;
     }
 
-    setStudentName(name);
-    setStudentEmail(email);
-    setStartedAt(start);
-
-    fetchQuiz();
+    fetchQuizSession(sessionId);
   }, []);
 
   // Timer logic
@@ -77,14 +71,18 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
     return () => clearInterval(interval);
   }, [quiz, startedAt]);
 
-  const fetchQuiz = async () => {
+  const fetchQuizSession = async (sessionId: string) => {
     try {
-      const res = await fetch(`/api/quizzes/${id}?role=student`);
+      const res = await fetch(`/api/quizzes/${id}/session?sessionId=${sessionId}`);
       const data = await res.json();
       if (data.success) {
+        setStudentName(data.studentName);
+        setStudentEmail(data.studentEmail);
+        setStartedAt(data.startedAt);
         setQuiz(data.quiz);
+        setTimeLeft(data.timeLeft);
       } else {
-        setError(data.error || 'Failed to load quiz.');
+        setError(data.error || 'Failed to load quiz session.');
       }
     } catch (err) {
       console.error(err);
@@ -105,21 +103,27 @@ export default function TakeQuiz({ params }: { params: Promise<{ id: string }> }
     if (submitting) return;
     setSubmitting(true);
 
+    const sessionId = sessionStorage.getItem(`quiz_${id}_session_id`);
+    if (!sessionId) {
+      alert('Error: Session expired.');
+      router.replace(`/quiz/${id}`);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/quizzes/${id}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          studentName,
-          studentEmail,
-          answers: answersToSubmit,
-          startedAt
+          sessionId,
+          answers: answersToSubmit
         })
       });
 
       const data = await res.json();
       if (data.success) {
         // Save score and completion details to session storage
+        sessionStorage.setItem(`quiz_${id}_student_name`, studentName); // Pass name to results page
         sessionStorage.setItem(`quiz_${id}_score`, String(data.submission.score));
         sessionStorage.setItem(`quiz_${id}_total_questions`, String(data.submission.totalQuestions));
         sessionStorage.setItem(`quiz_${id}_percentage`, String(data.submission.percentage));

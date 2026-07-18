@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { generateToken } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +16,9 @@ export async function POST(req: NextRequest) {
 
     // Validate the password
     if (password === 'SAM29@') {
-      cookieStore.set('admin_session', 'authenticated_session_SAM29', {
+      const secureToken = generateToken();
+      
+      cookieStore.set('admin_session', secureToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',

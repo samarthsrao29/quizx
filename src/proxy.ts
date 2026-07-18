@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifyToken } from '@/lib/auth';
 
 export function proxy(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
@@ -12,13 +13,9 @@ export function proxy(req: NextRequest) {
     }
 
     const session = req.cookies.get('admin_session');
-    if (!session || session.value !== 'authenticated_session_SAM29@') {
-      // Note: we check for the value matching the cookie set (e.g. authenticated_session_SAM29)
-      // Let's make sure it matches what we write in the auth route: 'authenticated_session_SAM29'
-      if (!session || session.value !== 'authenticated_session_SAM29') {
-        const loginUrl = new URL('/admin/login', req.url);
-        return NextResponse.redirect(loginUrl);
-      }
+    if (!session || !verifyToken(session.value)) {
+      const loginUrl = new URL('/admin/login', req.url);
+      return NextResponse.redirect(loginUrl);
     }
   }
 
@@ -48,7 +45,7 @@ export function proxy(req: NextRequest) {
 
     if (isProtected) {
       const session = req.cookies.get('admin_session');
-      if (!session || session.value !== 'authenticated_session_SAM29') {
+      if (!session || !verifyToken(session.value)) {
         return new NextResponse(
           JSON.stringify({ success: false, error: 'Unauthorized' }),
           { status: 401, headers: { 'Content-Type': 'application/json' } }

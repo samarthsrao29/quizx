@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getQuiz, saveSubmission, Submission } from '@/lib/db';
-
-// Helper to generate a short unique ID
-function generateId(): string {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
+import { getQuiz, getSession, deleteSession, saveSubmission, Submission } from '@/lib/db';
 
 export async function POST(
   req: NextRequest,
@@ -19,48 +14,64 @@ export async function POST(
     }
 
     const body = await req.json();
-    const { studentName, studentEmail, answers, startedAt } = body;
+    const { sessionId, answers } = body;
 
-    if (!studentName || typeof studentName !== 'string' || !studentName.trim()) {
-      return NextResponse.json({ success: false, error: 'Name is required' }, { status: 400 });
-    }
-
-    if (!studentEmail || typeof studentEmail !== 'string' || !studentEmail.trim()) {
-      return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
+    if (!sessionId) {
+      return NextResponse.json({ success: false, error: 'Session ID is required' }, { status: 400 });
     }
 
     if (!answers || typeof answers !== 'object') {
       return NextResponse.json({ success: false, error: 'Answers are required' }, { status: 400 });
     }
 
+    // Retrieve active student attempt from database
+    const session = await getSession(sessionId);
+
+    if (!session || session.quizId !== id) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid or expired quiz attempt. Your answers may have already been submitted.'
+      }, { status: 400 });
+    }
+
     const submittedAt = new Date().toISOString();
-    const startTime = startedAt ? new Date(startedAt).getTime() : new Date().getTime();
+    const startTime = new Date(session.startedAt).getTime();
     const endTime = new Date(submittedAt).getTime();
     const completedInSeconds = Math.max(0, Math.round((endTime - startTime) / 1000));
 
-    // Calculate score on server side
+    // Anti-Cheat: If they exceeded the limit plus a small 30-second buffer
+    const maxAllowedSeconds = quiz.duration * 60 + 30; // 30s buffer for network latency
+    const isLate = quiz.duration > 0 && completedInSeconds > maxAllowedSeconds;
+
+    // Calculate score
     let score = 0;
     quiz.questions.forEach((question) => {
       const selectedOptionIndex = answers[question.id];
       if (selectedOptionIndex !== undefined && selectedOptionIndex === question.correctAnswer) {
+        // If it was late, we can choose to ignore correct answers or count them but flag it.
+        // Standard behavior: count the correct answers but we can flag. We will count them.
         score++;
       }
     });
 
     const newSubmission: Submission = {
-      id: generateId(),
+      id: sessionId, // Use session ID as submission ID to prevent duplication
       quizId: id,
-      studentName: studentName.trim(),
-      studentEmail: studentEmail.trim(),
+      studentName: session.studentName,
+      studentEmail: session.studentEmail,
       answers: answers as Record<string, number>,
       score,
       totalQuestions: quiz.questions.length,
-      startedAt: startedAt || submittedAt,
+      startedAt: session.startedAt,
       submittedAt,
       completedInSeconds
     };
 
+    // Save the submission grades
     await saveSubmission(newSubmission);
+
+    // Delete the active attempt session so they cannot submit again
+    await deleteSession(sessionId);
 
     return NextResponse.json({
       success: true,
@@ -69,7 +80,8 @@ export async function POST(
         score: newSubmission.score,
         totalQuestions: newSubmission.totalQuestions,
         percentage: Math.round((newSubmission.score / newSubmission.totalQuestions) * 100),
-        completedInSeconds: newSubmission.completedInSeconds
+        completedInSeconds: newSubmission.completedInSeconds,
+        isLate
       }
     });
   } catch (error: any) {
