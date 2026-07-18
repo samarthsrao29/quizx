@@ -126,6 +126,29 @@ export default function AdminDashboard() {
     setQrQuizTitle(quizTitle);
   };
 
+  const handleDownloadQR = async () => {
+    if (!qrCodeUrl) return;
+    try {
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCodeUrl)}`;
+      const res = await fetch(qrApiUrl);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `quiz-${qrQuizTitle.replace(/\s+/g, '-').toLowerCase()}-qr.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Error downloading QR code:', error);
+      // Fallback: open in new tab
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCodeUrl)}`;
+      window.open(qrApiUrl, '_blank');
+    }
+  };
+
   const executeDeleteQuiz = async (quizId: string) => {
     try {
       const res = await fetch(`/api/quizzes/${quizId}`, {
@@ -307,6 +330,15 @@ export default function AdminDashboard() {
                 height="200"
                 style={{ display: 'block' }}
               />
+            </div>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <button
+                onClick={handleDownloadQR}
+                className="btn btn-primary"
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                <span>📥</span> Download QR Code
+              </button>
             </div>
             <div style={{ wordBreak: 'break-all', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Link: <a href={qrCodeUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--secondary)', textDecoration: 'underline' }}>{qrCodeUrl}</a>
