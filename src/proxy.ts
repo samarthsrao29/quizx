@@ -28,11 +28,13 @@ export function proxy(req: NextRequest) {
   }
 
   // 2. Protect Admin API endpoints
-  if (pathname.startsWith('/api/quizzes')) {
+  if (pathname.startsWith('/api/quizzes') || pathname === '/api/auth/change-password') {
     const parts = pathname.split('/').filter(Boolean); // e.g. ["api", "quizzes", "ID", "responses"]
     let isProtected = false;
 
-    if (parts.length === 2) {
+    if (pathname === '/api/auth/change-password') {
+      isProtected = true;
+    } else if (parts.length === 2) {
       // Path: /api/quizzes (GET list, POST create) -> Protected
       isProtected = true;
     } else if (parts.length === 3) {
@@ -75,5 +77,5 @@ export function proxy(req: NextRequest) {
 
 // Configure path matching to avoid running on static assets
 export const config = {
-  matcher: ['/admin/:path*', '/api/quizzes/:path*'],
+  matcher: ['/admin/:path*', '/api/quizzes/:path*', '/api/auth/change-password'],
 };
