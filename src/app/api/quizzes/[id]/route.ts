@@ -30,7 +30,9 @@ export async function GET(
           title: quiz.title,
           duration: quiz.duration,
           questions: sanitizedQuestions,
-          createdAt: quiz.createdAt
+          createdAt: quiz.createdAt,
+          startDate: quiz.startDate,
+          endDate: quiz.endDate
         }
       });
     }

@@ -13,6 +13,8 @@ export default function QuizResult({ params }: { params: Promise<{ id: string }>
   const [percentage, setPercentage] = useState<number | null>(null);
   const [timeTaken, setTimeTaken] = useState<number | null>(null);
   const [studentName, setStudentName] = useState('');
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
 
   useEffect(() => {
     const name = sessionStorage.getItem(`quiz_${id}_student_name`);
@@ -31,6 +33,22 @@ export default function QuizResult({ params }: { params: Promise<{ id: string }>
     setTotalQuestions(parseInt(totalQ));
     setPercentage(parseInt(pct));
     setTimeTaken(duration ? parseInt(duration) : null);
+
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await fetch(`/api/quizzes/${id}/leaderboard`);
+        const data = await res.json();
+        if (data.success) {
+          setLeaderboard(data.leaderboard);
+        }
+      } catch (err) {
+        console.error('Failed to fetch leaderboard:', err);
+      } finally {
+        setLeaderboardLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
 
     // Clean up student session storage so they can't re-take immediately by navigating back
     return () => {
@@ -120,6 +138,64 @@ export default function QuizResult({ params }: { params: Promise<{ id: string }>
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Leaderboard Card */}
+      <div className="card" style={{ width: '100%', maxWidth: '500px', marginTop: '2rem', padding: '2rem' }}>
+        <h2 className="mb-4" style={{ fontSize: '1.25rem', textAlign: 'center' }}>🏆 Leaderboard (Top 10)</h2>
+        
+        {leaderboardLoading ? (
+          <div className="flex-center" style={{ padding: '1rem' }}>
+            <div style={{
+              width: '24px',
+              height: '24px',
+              border: '3px solid var(--border-color)',
+              borderTop: '3px solid var(--primary)',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            <style jsx>{`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}</style>
+          </div>
+        ) : leaderboard.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center' }}>No submissions yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {leaderboard.map((user) => {
+              const isCurrentUser = user.studentName.trim().toLowerCase() === studentName.trim().toLowerCase();
+              return (
+                <div key={user.rank} className="flex-between animate-fade-in" style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: 'var(--border-radius-sm)',
+                  background: isCurrentUser ? 'rgba(139, 92, 246, 0.1)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${isCurrentUser ? 'var(--primary)' : 'var(--border-color)'}`,
+                  fontSize: '0.95rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{
+                      fontWeight: 'bold',
+                      color: user.rank === 1 ? '#f59e0b' : user.rank === 2 ? '#9ca3af' : user.rank === 3 ? '#b45309' : 'var(--text-muted)',
+                      width: '20px'
+                    }}>
+                      #{user.rank}
+                    </span>
+                    <span style={{ fontWeight: isCurrentUser ? 'bold' : 'normal' }}>
+                      {user.studentName} {isCurrentUser && <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 'normal' }}>(You)</span>}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    <span>Score: <strong>{user.score}/{user.totalQuestions}</strong></span>
+                    <span>Time: <strong>{formatDuration(user.completedInSeconds)}</strong></span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

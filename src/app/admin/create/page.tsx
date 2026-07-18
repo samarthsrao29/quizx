@@ -19,6 +19,8 @@ export default function CreateQuiz() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const handleParse = () => {
     if (!pasteText.trim()) {
@@ -167,6 +169,8 @@ export default function CreateQuiz() {
           title,
           duration,
           questions,
+          startDate: startDate ? new Date(startDate).toISOString() : null,
+          endDate: endDate ? new Date(endDate).toISOString() : null,
         }),
       });
 
@@ -227,6 +231,34 @@ export default function CreateQuiz() {
               className="input"
               value={duration}
               onChange={(e) => setDuration(Math.max(0, parseInt(e.target.value) || 0))}
+            />
+          </div>
+        </div>
+
+        {/* Availability Window */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
+          <div className="form-group">
+            <label className="form-label">
+              <span>Available From (Start Date/Time)</span>
+              <span style={{ fontWeight: 'normal', color: 'var(--text-muted)' }}>Optional</span>
+            </label>
+            <input
+              type="datetime-local"
+              className="input"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">
+              <span>Available Until (Deadline)</span>
+              <span style={{ fontWeight: 'normal', color: 'var(--text-muted)' }}>Optional</span>
+            </label>
+            <input
+              type="datetime-local"
+              className="input"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
             />
           </div>
         </div>

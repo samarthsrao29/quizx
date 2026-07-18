@@ -22,7 +22,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { title, duration, questions } = body;
+    const { title, duration, questions, startDate, endDate } = body;
 
     if (!title || typeof title !== 'string') {
       return NextResponse.json({ success: false, error: 'Quiz title is required' }, { status: 400 });
@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
       title: title.trim(),
       duration,
       questions: validatedQuestions,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
     };
 
     await saveQuiz(newQuiz);

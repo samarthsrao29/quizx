@@ -182,6 +182,108 @@ export default function QuizSubmissions({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
+          {/* Top 3 Podium Leaderboard */}
+          {submissions.length > 0 && (
+            <div className="card mb-4 animate-fade-in" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <h2 className="mb-4" style={{ fontSize: '1.4rem', textAlign: 'center' }}>🏆 Top Performers Leaderboard</h2>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-end',
+                gap: '1.5rem',
+                width: '100%',
+                maxWidth: '500px',
+                marginTop: '1rem',
+                minHeight: '220px'
+              }}>
+                {/* 2nd Place */}
+                {submissions.length > 1 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                    <span style={{ fontSize: '1.5rem' }}>🥈</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '0.95rem', textAlign: 'center', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={submissions[1].studentName}>
+                      {submissions[1].studentName}
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      {submissions[1].score}/{totalQuestions} ({formatDuration(submissions[1].completedInSeconds)})
+                    </span>
+                    <div style={{
+                      width: '100%',
+                      height: '80px',
+                      background: 'linear-gradient(to top, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.15) 100%)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderBottom: 'none',
+                      borderRadius: '8px 8px 0 0',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontWeight: 'bold',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      2nd
+                    </div>
+                  </div>
+                )}
+
+                {/* 1st Place */}
+                {submissions.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1.2 }}>
+                    <span style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 10px rgba(234,179,8,0.3))' }}>👑</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#f59e0b' }} title={submissions[0].studentName}>
+                      {submissions[0].studentName}
+                    </span>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      {submissions[0].score}/{totalQuestions} ({formatDuration(submissions[0].completedInSeconds)})
+                    </span>
+                    <div style={{
+                      width: '100%',
+                      height: '120px',
+                      background: 'linear-gradient(to top, rgba(234,179,8,0.1) 0%, rgba(234,179,8,0.25) 100%)',
+                      border: '1px solid rgba(234,179,8,0.3)',
+                      borderBottom: 'none',
+                      borderRadius: '8px 8px 0 0',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontWeight: 'bold',
+                      color: '#f59e0b',
+                      boxShadow: '0 0 25px rgba(234,179,8,0.15)'
+                    }}>
+                      1st
+                    </div>
+                  </div>
+                )}
+
+                {/* 3rd Place */}
+                {submissions.length > 2 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                    <span style={{ fontSize: '1.5rem' }}>🥉</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '0.95rem', textAlign: 'center', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={submissions[2].studentName}>
+                      {submissions[2].studentName}
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      {submissions[2].score}/{totalQuestions} ({formatDuration(submissions[2].completedInSeconds)})
+                    </span>
+                    <div style={{
+                      width: '100%',
+                      height: '60px',
+                      background: 'linear-gradient(to top, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.1) 100%)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderBottom: 'none',
+                      borderRadius: '8px 8px 0 0',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontWeight: 'bold',
+                      color: '#cd7f32'
+                    }}>
+                      3rd
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Submissions Table */}
           <div className="card" style={{ padding: '1.5rem', overflowX: 'auto' }}>
             <h2 className="mb-4" style={{ fontSize: '1.4rem' }}>Student Responses</h2>

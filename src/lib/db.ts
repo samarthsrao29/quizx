@@ -15,6 +15,8 @@ export interface Quiz {
   duration: number; // in minutes (0/null = unlimited)
   questions: Question[];
   createdAt: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface Submission {

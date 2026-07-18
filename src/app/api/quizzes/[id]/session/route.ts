@@ -17,6 +17,23 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Quiz not found' }, { status: 404 });
     }
 
+    // Date availability validation
+    const now = new Date();
+    if (quiz.startDate && new Date(quiz.startDate) > now) {
+      const formattedDate = new Date(quiz.startDate).toLocaleString();
+      return NextResponse.json({ 
+        success: false, 
+        error: `This quiz is not available yet. It will open on ${formattedDate}.` 
+      }, { status: 403 });
+    }
+    if (quiz.endDate && new Date(quiz.endDate) < now) {
+      const formattedDate = new Date(quiz.endDate).toLocaleString();
+      return NextResponse.json({ 
+        success: false, 
+        error: `This quiz has closed. The deadline was ${formattedDate}.` 
+      }, { status: 403 });
+    }
+
     const body = await req.json();
     const { studentName, studentEmail } = body;
 
