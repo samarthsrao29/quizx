@@ -47,5 +47,16 @@
       "submittedAt": "2026-07-18T05:08:14.991Z",
       "completedInSeconds": 7
     }
+  ],
+  "sessions": [],
+  "admins": [
+    {
+      "username": "physics",
+      "passwordHash": "NEW_PASS123!"
+    },
+    {
+      "username": "math",
+      "passwordHash": "SAM30@"
+    }
   ]
 }

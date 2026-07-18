@@ -34,9 +34,9 @@ export default function AdminLogin() {
       } else {
         setError(data.error || 'Invalid password.');
       }
-    } catch (err) {
-      console.error(err);
-      setError('An error occurred during authentication.');
+    } catch (err: any) {
+      console.error('Login error details:', err);
+      setError(err?.message || 'An error occurred during authentication.');
     } finally {
       setLoading(false);
     }
